@@ -136,7 +136,7 @@ def main():
         1. **Prepare your JSON data** in the format shown in the example
         2. **Paste the JSON** in the text area below
         3. **Click 'Analyze Survey'** to get insights
-        4. **Review the results** including clusters, sentiment, and recommendations
+        4. **Review the JSON results** 
         """)
         
         st.header("📄 JSON Format Example")
@@ -221,107 +221,30 @@ def main():
             with st.spinner("🔄 Analyzing with Claude AI... This may take a moment..."):
                 analysis_result = analyze_with_claude(all_responses, word_cloud)
             
-            # Display results
+            # Display results as JSON only
             st.header("📊 Analysis Results")
             
-            # Tabs for different sections
-            tab1, tab2, tab3, tab4 = st.tabs(["📋 Executive Summary", "🎯 Customer Clusters", "💭 Sentiment Analysis", "☁️ Word Cloud"])
+            # Show basic stats
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Responses", len(all_responses))
+            with col2:
+                st.metric("Total Respondents", len(survey_data))
+            with col3:
+                st.metric("Analysis Complete", "✅")
             
-            with tab1:
-                exec_summary = analysis_result.get("executive_summary", {})
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Confidence Level", f"{exec_summary.get('confidence_level', 0)}/5")
-                with col2:
-                    st.metric("Total Responses", analysis_result.get("analysis_metadata", {}).get("total_responses", 0))
-                
-                st.subheader("🎯 Market Opportunity")
-                st.write(exec_summary.get("market_opportunity", "No data available"))
-                
-                st.subheader("👥 Primary Segment")
-                st.write(exec_summary.get("primary_segment", "No data available"))
-                
-                st.subheader("⚡ Immediate Actions")
-                actions = exec_summary.get("immediate_actions", [])
-                for i, action in enumerate(actions, 1):
-                    st.write(f"{i}. {action}")
-                
-                st.subheader("⚠️ Risk Factors")
-                risks = exec_summary.get("risk_factors", [])
-                for i, risk in enumerate(risks, 1):
-                    st.write(f"{i}. {risk}")
+            # Display the JSON output
+            st.subheader("🔍 Analysis JSON Output")
+            st.json(analysis_result)
             
-            with tab2:
-                clusters = analysis_result.get("clusters", [])
-                
-                for cluster in clusters:
-                    with st.expander(f"🎯 {cluster.get('title', 'Unnamed Cluster')} ({cluster.get('response_count', 0)} responses)"):
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric("Pain Intensity", f"{cluster.get('pain_intensity', 0)}/5")
-                        with col2:
-                            st.metric("Urgency", f"{cluster.get('urgency', 0)}/5")
-                        with col3:
-                            st.write(f"**Sentiment:** {cluster.get('sentiment', 'Unknown')}")
-                        
-                        st.write(f"**Customer Segment:** {cluster.get('customer_segment', 'Unknown')}")
-                        st.write(f"**Key Insight:** {cluster.get('key_insight', 'No insight available')}")
-                        st.write(f"**Recommended Action:** {cluster.get('recommended_action', 'No action available')}")
-                        
-                        quotes = cluster.get('supporting_quotes', [])
-                        if quotes:
-                            st.write("**Supporting Quotes:**")
-                            for quote in quotes:
-                                st.write(f"• \"{quote}\"")
-            
-            with tab3:
-                sentiment = analysis_result.get("sentiment_analysis", {})
-                overall_sentiment = sentiment.get("overall_sentiment", {})
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.subheader("📊 Overall Sentiment")
-                    sentiment_data = {
-                        "Positive": overall_sentiment.get("positive", 0),
-                        "Negative": overall_sentiment.get("negative", 0),
-                        "Neutral": overall_sentiment.get("neutral", 0)
-                    }
-                    
-                    for sentiment_type, count in sentiment_data.items():
-                        st.metric(sentiment_type, count)
-                
-                with col2:
-                    st.subheader("😓 Pain Level")
-                    avg_pain = sentiment.get("average_pain_level", 0)
-                    st.metric("Average Pain Level", f"{avg_pain}/5")
-                    
-                    st.subheader("😊 Key Emotions")
-                    emotions = sentiment.get("key_emotions", [])
-                    if emotions:
-                        for emotion in emotions:
-                            st.badge(emotion)
-                    else:
-                        st.write("No key emotions identified")
-            
-            with tab4:
-                st.subheader("☁️ Top Words")
-                word_data = analysis_result.get("wordCloudData", {})
-                
-                if word_data:
-                    # Display as metrics
-                    cols = st.columns(min(len(word_data), 3))
-                    for i, (word, count) in enumerate(word_data.items()):
-                        with cols[i % 3]:
-                            st.metric(word.title(), count)
-                else:
-                    st.write("No word cloud data available")
-            
-            # Raw JSON output
-            with st.expander("🔍 Raw Analysis JSON"):
-                st.json(analysis_result)
+            # Option to download JSON
+            json_str = json.dumps(analysis_result, indent=2)
+            st.download_button(
+                label="📥 Download JSON Results",
+                data=json_str,
+                file_name="survey_analysis_results.json",
+                mime="application/json"
+            )
                 
         except json.JSONDecodeError as e:
             st.error(f"❌ Invalid JSON format: {e}")
