@@ -1,0 +1,8 @@
+streamlit
+pandas
+numpy
+anthropic
+sentence-transformers
+hdbscan
+anthropic
+scikit-learn
